@@ -1,3 +1,4 @@
+import { NoDataError } from '../domain/errors';
 import { normalizePoints } from '../domain/metrics';
 import type { Quote, Series, TimeWindow } from '../domain/types';
 import type { MarketDataProvider } from './marketData';
@@ -12,13 +13,14 @@ import type { MarketDataProvider } from './marketData';
 export class YahooProxyProvider implements MarketDataProvider {
   constructor(private readonly baseUrl: string = '/api') {}
 
-  private async getJson<T>(path: string): Promise<T> {
+  private async getJson<T>(path: string, onNotFound?: () => Error): Promise<T> {
     let res: Response;
     try {
       res = await fetch(`${this.baseUrl}${path}`);
     } catch {
       throw new Error('Market data service is unreachable');
     }
+    if (res.status === 404 && onNotFound) throw onNotFound();
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { message?: string } | null;
       if (body?.message) throw new Error(body.message);
@@ -38,6 +40,7 @@ export class YahooProxyProvider implements MarketDataProvider {
   async getSeries(symbol: string, window: TimeWindow): Promise<Series> {
     const data = await this.getJson<Series>(
       `/history?symbol=${encodeURIComponent(symbol)}&window=${window}`,
+      () => new NoDataError(symbol),
     );
     return { symbol, window, points: normalizePoints(data.points) };
   }

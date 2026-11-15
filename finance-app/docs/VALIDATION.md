@@ -17,12 +17,12 @@ CI runs the same four steps (`.github/workflows/finance-app-ci.yml`), so a green
 |---|---|---|
 | `npm run lint` | ESLint over `src/` and `server/` | No output after the script banner, exit 0 |
 | `npm run typecheck` | `tsc --noEmit`, strict mode | No output, exit 0 |
-| `npm test` | All Vitest suites | `Test Files 10 passed`, `Tests 53 passed`, no failures |
+| `npm test` | All Vitest suites | `Test Files 13 passed`, `Tests 95 passed`, no failures |
 | `npm run test:coverage` | Tests plus coverage floors | Same as above, plus a coverage summary and no `ERROR: Coverage ... does not meet global threshold` |
 | `npm run build` | Typecheck and Vite production bundle | `✓ built in …s`, files written to `dist/` |
 
 Coverage floors (in `vite.config.ts`): lines 90%, statements 90%, functions 85%, branches 85%.
-Current results are about 99% lines, 93% branches, 91% functions. A drop below a floor fails the run.
+Current results are about 99% lines, 94% branches, 91% functions. A drop below a floor fails the run.
 
 Expected noise, not failures:
 - Tests print a Recharts warning that the chart container has width 0. jsdom has no layout.
@@ -39,6 +39,9 @@ Expected noise, not failures:
 | Yahoo adapter | `server/yahooClient.test.ts` | Mocked `yahoo-finance2`: symbol filtering, regular-hours request, "No data" to empty |
 | UI components | `src/components/cards/components.test.tsx` | Quote formatting and colour class, chart card loading/error/retry, tabs |
 | UI rendering path | `src/pages/DashboardPage.test.tsx` | Five quote cards, window switching, error state when the provider fails |
+| Selected-company feature | `src/components/company/SelectedCompanyPanel.test.tsx` | Valid symbol charts against IBM; empty and malformed input show a message and make no request; unknown symbol shows "No data available" with no chart and no fallback; transient failure shows Retry and recovers |
+| Existing dashboard preserved | `src/pages/DashboardPage.test.tsx` | After a no-data or failed selection: still exactly five quote cards, main chart has no error; selection follows the time window |
+| Symbols and errors | `src/domain/symbol.test.ts`, `src/state/queries.test.ts` | Symbol rules (`BRK-B`, `^GSPC`, `VOD.L` accepted; `$$$` rejected); no retry on `NoDataError` |
 | App boot | `src/App.test.tsx` | Full render through real providers on mock data |
 
 No test calls Yahoo or the network. Live behaviour is checked manually (below).

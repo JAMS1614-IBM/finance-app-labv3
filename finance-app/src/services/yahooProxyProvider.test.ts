@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { NoDataError } from '../domain/errors';
 import { YahooProxyProvider } from './yahooProxyProvider';
 
 function stubFetch(handler: (url: string) => Response | Promise<Response>) {
@@ -34,6 +35,18 @@ describe('YahooProxyProvider', () => {
   it('surfaces the server error message on a non-2xx response', async () => {
     stubFetch(() => json({ code: 'NOT_FOUND', message: 'No price history found for ZZZZ' }, 404));
     await expect(new YahooProxyProvider().getSeries('ZZZZ', 'day')).rejects.toThrow('No price history found for ZZZZ');
+  });
+
+  it('maps a 404 history response to NoDataError, so the UI shows "no data" not a failure', async () => {
+    stubFetch(() => json({ code: 'NOT_FOUND', message: 'No price history found for ZZZZ' }, 404));
+    await expect(new YahooProxyProvider().getSeries('ZZZZ', 'day')).rejects.toBeInstanceOf(NoDataError);
+  });
+
+  it('does not treat a 502 or 400 as no-data', async () => {
+    stubFetch(() => json({ code: 'UPSTREAM_ERROR', message: 'Market data provider request failed' }, 502));
+    const err = await new YahooProxyProvider().getSeries('IBM', 'day').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).not.toBeInstanceOf(NoDataError);
   });
 
   it('explains that the proxy is down when a 5xx has no JSON body', async () => {

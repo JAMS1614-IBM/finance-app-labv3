@@ -65,6 +65,29 @@ in `server/index.ts`. Routes, caching, and the UI are unchanged.
 
 **Add a metric.** Put pure functions in `src/domain/metrics.ts` with a unit test.
 
+## Selected-company chart
+
+Below the main chart, the user can type any ticker and see it compared with IBM (the first
+company in `DEFAULT_COMPANIES`), both indexed to 100, for the active time window.
+
+- **Isolated by design.** `SelectedCompanyPanel` has its own state and its own query
+  (`useSelectedSeries`). It never changes the company list, so the five quote cards and the
+  main chart cannot be affected by it. The query key `['series', symbol, window]` is shared with
+  the main chart, so IBM's data is fetched once.
+- **Input rules** live in `src/domain/symbol.ts` and are shared with the server, so the UI and
+  API agree. Input is trimmed and uppercased; malformed input shows a message and sends no request.
+- **No data means no data.** If a symbol has no history, the provider throws `NoDataError`
+  (`src/domain/errors.ts`). The panel shows "No data available for XYZ" with no chart. It never
+  substitutes another company, and it does not retry. The proxy maps its HTTP 404 to `NoDataError`;
+  other failures (502, network) stay ordinary errors with a Retry button.
+- **Mock mode.** The mock provider only knows the five default companies plus
+  `MOCK_EXTRA_SYMBOLS` (`src/services/mockProvider.ts`). Any other symbol has no data, so the
+  no-data path can be demoed offline. Try `AAPL` (works) and `ZZZZQ` (no data).
+- **Symbol format is Yahoo's.** Input is passed through as typed (trimmed, uppercased), so use
+  Yahoo symbols: `BRK-B` (not `BRK.B`), `^GSPC`, `VOD.L`. A symbol Yahoo does not recognise shows
+  the no-data message. Dots are not rewritten, because they are also exchange suffixes (`VOD.L`).
+- Chart lines use a function `dataKey`, so symbols containing `.` or `^` are plotted correctly.
+
 ## Known limits
 
 - Requires Node 22+ (`yahoo-finance2` v4).

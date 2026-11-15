@@ -1,12 +1,12 @@
 import express, { type Express, type Response } from 'express';
 import { normalizeQuote, normalizeSeries } from '../src/domain/normalize';
 import type { Quote, Series } from '../src/domain/types';
+import { isValidSymbol } from '../src/domain/symbol';
 import { TtlCache } from './cache';
 import { isTimeWindow, RANGES } from './rangeConfig';
 import type { MarketClient } from './yahooClient';
 
-/** Any ticker-like string. Adding a company never requires a server change. */
-const SYMBOL_RE = /^[A-Z0-9][A-Z0-9.^=-]{0,11}$/;
+// Any ticker-like string is accepted, so adding a company never requires a server change.
 const MAX_SYMBOLS = 10;
 
 export interface ApiError {
@@ -40,7 +40,7 @@ export function createApp(client: MarketClient, options: AppOptions = {}): Expre
       .split(',')
       .map((s) => s.trim().toUpperCase())
       .filter(Boolean);
-    if (symbols.length === 0 || symbols.length > MAX_SYMBOLS || !symbols.every((s) => SYMBOL_RE.test(s))) {
+    if (symbols.length === 0 || symbols.length > MAX_SYMBOLS || !symbols.every((s) => isValidSymbol(s))) {
       return fail(res, 400, 'BAD_REQUEST', `Provide 1-${MAX_SYMBOLS} valid, comma-separated symbols`);
     }
     try {
@@ -59,7 +59,7 @@ export function createApp(client: MarketClient, options: AppOptions = {}): Expre
   app.get('/api/history', async (req, res) => {
     const symbol = String(req.query.symbol ?? '').trim().toUpperCase();
     const window = req.query.window;
-    if (!SYMBOL_RE.test(symbol)) return fail(res, 400, 'BAD_REQUEST', 'A valid symbol is required');
+    if (!isValidSymbol(symbol)) return fail(res, 400, 'BAD_REQUEST', 'A valid symbol is required');
     if (!isTimeWindow(window)) return fail(res, 400, 'BAD_REQUEST', 'window must be one of: day, week, quarter');
     try {
       const spec = RANGES[window];
