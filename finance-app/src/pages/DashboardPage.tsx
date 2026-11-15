@@ -1,6 +1,7 @@
 import { ChartCard } from '../components/cards/ChartCard';
 import { QuoteCard } from '../components/cards/QuoteCard';
 import { LineChartView, type ChartLine } from '../components/charts/LineChartView';
+import { SelectedCompanyPanel } from '../components/company/SelectedCompanyPanel';
 import { ErrorState } from '../components/feedback/ErrorState';
 import { LoadingState } from '../components/feedback/LoadingState';
 import { WindowTabs } from '../components/layout/WindowTabs';
@@ -56,6 +57,8 @@ export function DashboardPage() {
       >
         <LineChartView lines={lines} window={window} />
       </ChartCard>
+
+      <SelectedCompanyPanel />
 
       <footer className="muted disclaimer">Data may be delayed. Not investment advice.</footer>
     </main>

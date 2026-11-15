@@ -18,3 +18,8 @@ h1 { font-size: 24px; margin: 0; }
 .state { padding: 12px; }
 .state-error { color: #da1e28; display: flex; gap: 12px; align-items: center; }
 .disclaimer { margin-top: 16px; }
+.selected-company { margin-top: 24px; }
+.selected-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.selected-form input { padding: 6px 10px; border: 1px solid #c6c6c6; min-width: 160px; text-transform: uppercase; }
+.selected-form input[aria-invalid='true'] { border-color: #da1e28; }
+.selected-form button { padding: 6px 14px; border: 1px solid #0f62fe; background: #0f62fe; color: #fff; cursor: pointer; }

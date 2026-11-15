@@ -14,17 +14,24 @@ export interface ChartLine {
   points: PricePoint[];
 }
 
-/** Generic multi-line chart; a single entry gives a single-company chart. */
-export function LineChartView({ lines, window }: { lines: ChartLine[]; window: TimeWindow }) {
+export type ChartRow = Record<string, string | number>;
+
+/** Merges every line onto a shared, sorted time axis. Missing values are left out of the row. */
+export function buildChartData(lines: ChartLine[]): ChartRow[] {
   const times = [...new Set(lines.flatMap((l) => l.points.map((p) => p.time)))].sort();
-  const data = times.map((time) => {
-    const row: Record<string, string | number> = { time };
+  return times.map((time) => {
+    const row: ChartRow = { time };
     for (const l of lines) {
       const hit = l.points.find((p) => p.time === time);
       if (hit) row[l.symbol] = hit.close;
     }
     return row;
   });
+}
+
+/** Generic multi-line chart; a single entry gives a single-company chart. */
+export function LineChartView({ lines, window }: { lines: ChartLine[]; window: TimeWindow }) {
+  const data = buildChartData(lines);
 
   return (
     <div style={{ width: '100%', height: 280 }}>
@@ -35,7 +42,15 @@ export function LineChartView({ lines, window }: { lines: ChartLine[]; window: T
           <YAxis domain={['auto', 'auto']} width={48} />
           <Tooltip labelFormatter={(t: string) => formatTick(t, window)} />
           {lines.map((l) => (
-            <Line key={l.symbol} dataKey={l.symbol} stroke={l.color} dot={false} connectNulls />
+            // A function dataKey is required: a string like "BRK.B" would be read as a nested path.
+            <Line
+              key={l.symbol}
+              name={l.symbol}
+              dataKey={(row: ChartRow) => row[l.symbol]}
+              stroke={l.color}
+              dot={false}
+              connectNulls
+            />
           ))}
         </LineChart>
       </ResponsiveContainer>

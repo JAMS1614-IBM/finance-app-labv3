@@ -86,6 +86,14 @@ describe('GET /api/history', () => {
     expect((await request(app(fakeClient())).get('/api/history?symbol=IBM')).status).toBe(400);
   });
 
+  it('accepts index and class-share tickers such as ^GSPC and BRK.B', async () => {
+    for (const symbol of ['^GSPC', 'BRK.B']) {
+      const res = await request(app(fakeClient())).get(`/api/history?symbol=${encodeURIComponent(symbol)}&window=week`);
+      expect(res.status).toBe(200);
+      expect(res.body.symbol).toBe(symbol);
+    }
+  });
+
   it('returns 404 when the symbol has no history', async () => {
     const client = fakeClient({ bars: async () => [{ date: new Date(), close: null }] });
     const res = await request(app(client)).get('/api/history?symbol=IBM&window=week');
